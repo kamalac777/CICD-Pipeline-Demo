@@ -4,68 +4,93 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Building the project...'
-                // Use Maven to compile and package the project
-                sh 'mvn clean package'
+                echo("checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'githubtoken', url: 'https://github.com/samer07/jenkins-pipeline-demo.git']])") 
+                //sh 'mvn clean package'
             }
         }
+
         stage('Unit and Integration Tests') {
             steps {
-                echo 'Running unit and integration tests...'
-                // Use JUnit for unit tests
-                sh 'mvn test'
-                // Use Selenium for integration tests (example placeholder)
-                // sh 'mvn verify -DseleniumTests'
+                echo("Run unit tests using JUnit, which will ensure code fucnctions as expected") 
+               // sh 'mvn test'
+
+                echo("Run integration tests using Selenium")
+                //sh 'selenium-runner --config test/config.json'
+            }
+            post{
+                success {
+                    emailext attachLog: true, 
+                        body: 'Test was successful', 
+                        subject: 'Test status email', 
+                        to: 'kamalac777@gmail.com'
+                }
+                failure {
+                    emailext attachLog: true, 
+                        body: 'Test was Failed', 
+                        subject: 'Test status email', 
+                        to: 'kamalac777@gmail.com'
+                }                                
             }
         }
+
         stage('Code Analysis') {
             steps {
-                echo 'Running code analysis...'
-                // Use SonarQube for code analysis
-                sh 'mvn sonar:sonar'
+                echo("Analyze the code using SonarQube")
+                //withSonarQubeEnv('SonarQube') {
+                  //  sh 'mvn sonar:sonar'
+                //}
             }
         }
+
         stage('Security Scan') {
             steps {
-                echo 'Running security scan...'
-                // Use OWASP Dependency-Check for security vulnerabilities
-                sh 'mvn dependency-check:check'
+                echo("Perform a security scan using OWASP ZAP")
+                //sh 'zap-baseline.py -t http://localhost:8080/myapp -r report.html'
+            }
+            post{
+                success {
+                    emailext attachLog: true, 
+                        body: 'Scan was successful', 
+                        subject: 'Scan status email', 
+                        to: 'kamalac777@gmail.com'
+                }
+                failure {
+                    emailext attachLog: true, 
+                        body: 'Scan was Failed', 
+                        subject: 'Scan status email', 
+                        to: 'kamalac777@gmail.com'
+                }                                
             }
         }
+
         stage('Deploy to Staging') {
             steps {
-                echo 'Deploying to staging environment...'
-                // Deploy to a staging server, for example, using SCP to copy files
-                sh 'scp target/*.jar user@staging-server:/path/to/deploy'
+                echo("Deploy the application to a staging server using Docker")
+                //sh 'docker build -t myapp .'
+                //sh 'docker run -d --name myapp-staging -p 8080:8080 myapp'
             }
+            
         }
+
         stage('Integration Tests on Staging') {
             steps {
-                echo 'Running integration tests on staging...'
-                // Run integration tests on the staging environment
-                // Placeholder for running tests on staging
-                // sh 'curl http://staging-server/run-tests'
+                echo("Run integration tests on the staging environment using Selenium")
+                //sh 'selenium-runner --config test/config-staging.json'
             }
         }
+
         stage('Deploy to Production') {
             steps {
-                echo 'Deploying to production environment...'
-                // Deploy to a production server
-                sh 'scp target/*.jar user@production-server:/path/to/deploy'
+                echo("Deploy the application to a production server using Docker")
+                /*sh 'docker stop myapp-staging'
+                sh 'docker rm myapp-staging'
+                sh 'docker run -d --name myapp-production -p 80:8080 myapp'*/
             }
         }
-    }
-
-    post {
-        always {
-            echo 'Sending notification emails...'
-            // Email notifications using the Email Extension Plugin
-            emailext(
-                subject: "Jenkins Pipeline: ${currentBuild.fullDisplayName}",
-                body: """<p>Build Status: ${currentBuild.currentResult}</p>
-                         <p>See details at: ${env.BUILD_URL}</p>""",
-                to: 'kamalac777@gmail.com'
-            )
+        stage('completed') {
+            steps {
+                echo("Completed") 
+            }  
         }
     }
 }
